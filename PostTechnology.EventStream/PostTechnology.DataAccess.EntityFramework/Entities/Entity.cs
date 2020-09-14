@@ -1,5 +1,4 @@
 ﻿using MessagePack;
-using System.Runtime.InteropServices;
 
 namespace PostTechnology.DataAccess.EntityFramework.Entities
 {

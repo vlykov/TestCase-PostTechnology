@@ -33,8 +33,6 @@ namespace PostTechnology.EventSubscriber
 
         public void Start()
         {
-            var messageNumber = _repository.GetLastMessageNumber();
-
             _connection = _connectionProvider.GetConnection();
             _cancellationTokenSource = new CancellationTokenSource();
 
