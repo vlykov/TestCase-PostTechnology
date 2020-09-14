@@ -1,7 +1,8 @@
-﻿using STAN.Client;
+﻿using PostTechnology.EventBus.Stan;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PostTechnology.EventPublisher
 {
@@ -9,14 +10,11 @@ namespace PostTechnology.EventPublisher
     {
         static void Main(string[] args)
         {
-            var clusterId = "test-cluster";
-            var clientId = $"producer-{Guid.NewGuid().ToString("N")}";
+            var services = CompositionRoot.ConfigureApp();
+            var connectionProvider = services.GetService<IStanConnectionProvider>();
             var subject = "PostTechnology.EventBus";
 
-            //var options = StanOptions.GetDefaultOptions();
-            //options.NatsURL = "nats://localhost:4222";
-
-            using (var cn = new StanConnectionFactory().CreateConnection(clusterId, clientId))
+            using (var connection = connectionProvider.GetConnection())
             {
                 var cts = new CancellationTokenSource();
 
@@ -26,7 +24,7 @@ namespace PostTechnology.EventPublisher
 
                     while (!cts.IsCancellationRequested)
                     {
-                        cn.Publish(subject, BitConverter.GetBytes(rnd.Next(-10, 40)));
+                        connection.Publish(subject, BitConverter.GetBytes(rnd.Next(-10, 40)));
 
                         await Task.Delay(1000, cts.Token);
                     }
