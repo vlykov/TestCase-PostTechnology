@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PostTechnology.DataAccess.EntityFramework.Entities;
+using PostTechnology.DataAccess.EntityFramework.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace PostTechnology.DataAccess.EntityFramework.Repository
             _dbSet = _context.Set<T>();
         }
 
-        public int GetLastNumber()
+        public int GetLastMessageNumber()
         {
             if (!_dbSet.Any())
                 return 0;
@@ -27,6 +28,7 @@ namespace PostTechnology.DataAccess.EntityFramework.Repository
             return _dbSet.Max(message => message.Number);
         }
 
+        //todo: CalculateCheckSum лучше всего отвязать от репозитория/инвертировать - вынести в отдельный сервис для поддержки различных вариантов подсчета
         public int CalculateCheckSum()
         {
             try
@@ -37,12 +39,11 @@ namespace PostTechnology.DataAccess.EntityFramework.Repository
                     _context.Database.OpenConnection();
                     using (var result = command.ExecuteReader())
                     {
-                        if(result.Read() == false)
+                        if(result.Read() == false || result.IsDBNull(0))
                             return 0;
                         var checksum = result.GetInt32(0);
                         _context.Database.CloseConnection();
                         return checksum;
-                        // do something with result
                     }
                 }
             }
@@ -51,7 +52,6 @@ namespace PostTechnology.DataAccess.EntityFramework.Repository
                 throw;
             }
         }
-
 
         public async Task<T> GetById(int id)
         {
@@ -113,11 +113,6 @@ namespace PostTechnology.DataAccess.EntityFramework.Repository
             await _context.SaveChangesAsync();
 
             return true;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

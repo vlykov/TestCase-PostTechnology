@@ -1,6 +1,6 @@
 ﻿using STAN.Client;
 
-namespace PostTechnology.EventBus.Stan
+namespace PostTechnology.CrossCutting.Interfaces
 {
     public interface IStanConnectionProvider
     {

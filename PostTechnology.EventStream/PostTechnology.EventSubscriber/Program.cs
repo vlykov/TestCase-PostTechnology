@@ -1,65 +1,35 @@
-﻿using PostTechnology.EventBus.Stan;
-using STAN.Client;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using PostTechnology.EventBus.Stan.Config;
-using PostTechnology.DataAccess.EntityFramework.Entities;
-using PostTechnology.DataAccess.EntityFramework.Repository;
-using MessagePack;
 using PostTechnology.DataAccess.EntityFramework;
+using PostTechnology.CrossCutting;
+using PostTechnology.CrossCutting.Interfaces;
 
 namespace PostTechnology.EventSubscriber
 {
     class Program
     {
-        static IMessageRepository<RxMessage> _repository;
-        static IServiceProvider _services;
         static void Main(string[] args)
         {
+            Console.Clear();
+            Console.WriteLine("ConsumerService preparing to start.");
+
             var services = CompositionRoot.ConfigureApp();
-            AppDbContextFactory.PrepareDatabase(services);
+            services.AddScoped<ConsumerService>()
+                .AddScoped<ITraceMonitor, ConsoleTraceMonitor>();
 
-            _services = services;
-            var config = services.GetService<IOptions<AppConfig>>();
-            var connectionProvider = services.GetService<IStanConnectionProvider>();
+            var container = services.BuildServiceProvider();
+            AppDbContextFactory.PrepareDatabase(container);
 
-            using (var connection = connectionProvider.GetConnection())
-            {
-                var cts = new CancellationTokenSource();
-                IStanSubscription subscription = null;
+            var consumer = container.GetRequiredService<ConsumerService>();
+            consumer.Start();
 
-                Task.Run(() =>
-                {
-                    var opts = StanSubscriptionOptions.GetDefaultOptions();
-                    opts.DurableName = $"{config.Value.NatsConnection.ClientId}.Durable";
+            Console.WriteLine("ConsumerService online.");
+            Console.WriteLine("Press <enter> to exit...");
+            Console.ReadLine();
 
-                    subscription = connection.Subscribe("PostTechnology.EventBus", opts, MessageReceived);
-                }, cts.Token);
+            consumer.Stop();
 
-                Console.WriteLine("Hit any key to exit");
-                Console.ReadKey();
-                subscription.Close();
-                cts.Cancel();
-            }
-        }
-
-        private static async void MessageReceived(object sender, StanMsgHandlerArgs args)
-        {
-            var message = ParseMessage(args.Message.Data);
-            
-            _repository = _services.GetService<IMessageRepository<RxMessage>>();
-            await _repository.Add(message);
-
-            Console.WriteLine(message);
-        }
-
-        private static RxMessage ParseMessage(byte[] data)
-        {
-            var message = MessagePackSerializer.Deserialize<TxMessage>(data);
-            return new RxMessage { Number = message.Number, Sent = message.Sent, Content = message.Content, Hash = message.Hash, Received = DateTime.UtcNow };
+            container.Dispose();
         }
     }
 }

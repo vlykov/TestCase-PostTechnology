@@ -1,12 +1,8 @@
-﻿using PostTechnology.EventBus.Stan;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using PostTechnology.CrossCutting;
+using PostTechnology.CrossCutting.Interfaces;
 using PostTechnology.DataAccess.EntityFramework;
-using PostTechnology.DataAccess.EntityFramework.Repository;
-using PostTechnology.DataAccess.EntityFramework.Entities;
-using MessagePack;
+using System;
 
 namespace PostTechnology.EventPublisher
 {
@@ -14,43 +10,26 @@ namespace PostTechnology.EventPublisher
     {
         static void Main(string[] args)
         {
+            Console.Clear();
+            Console.WriteLine("ProducerService preparing to start.");
+
             var services = CompositionRoot.ConfigureApp();
-            AppDbContextFactory.PrepareDatabase(services);
+            services.AddScoped<ProducerService>()
+                .AddScoped<ITraceMonitor, ConsoleTraceMonitor>();
 
-            var connectionProvider = services.GetService<IStanConnectionProvider>();
-            var repository = services.GetService<IMessageRepository<TxMessage>>();
-            var numMessage = repository.GetLastNumber();
+            var container = services.BuildServiceProvider();
+            AppDbContextFactory.PrepareDatabase(container);
 
-            using (var connection = connectionProvider.GetConnection())
-            {
-                var cts = new CancellationTokenSource();
+            var producer = container.GetRequiredService<ProducerService>();
+            producer.Start();
 
-                Task.Run(async () =>
-                {
-                    var rnd = new Random();
+            Console.WriteLine("ProducerService online.");
+            Console.WriteLine("Press <enter> to exit...");
+            Console.ReadLine();
 
-                    while (!cts.IsCancellationRequested)
-                    {
-                        var checksum = repository.CalculateCheckSum();
-                        var message = GenerateMessage(++numMessage, checksum);
-                        byte[] payload = MessagePackSerializer.Serialize(message);
-                        connection.Publish("PostTechnology.EventBus", payload);
-                        await repository.Add(message);
-                        Console.WriteLine(message);
+            producer.Stop();
 
-                        await Task.Delay(1000, cts.Token);
-                    }
-                }, cts.Token);
-
-                Console.WriteLine("Hit any key to exit");
-                Console.ReadKey();
-                cts.Cancel();
-            }
-        }
-
-        static TxMessage GenerateMessage(int number, int checksum)
-        {
-            return new TxMessage { Number = number, Sent = DateTime.UtcNow, Content = "test", Hash = checksum.ToString() };
+            container.Dispose();
         }
     }
 }

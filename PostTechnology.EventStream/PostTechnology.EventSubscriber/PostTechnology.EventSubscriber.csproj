@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PostTechnology.EventBus.Stan\PostTechnology.EventBus.Stan.csproj" />
+    <ProjectReference Include="..\PostTechnology.EventBus.Stan\PostTechnology.CrossCutting.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
-using PostTechnology.EventBus.Stan.Config;
+using PostTechnology.CrossCutting.Config;
+using PostTechnology.CrossCutting.Interfaces;
 using STAN.Client;
 
-namespace PostTechnology.EventBus.Stan
+namespace PostTechnology.CrossCutting
 {
     public class StanConnectionProvider : IStanConnectionProvider
     {

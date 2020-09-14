@@ -1,4 +1,4 @@
-﻿namespace PostTechnology.EventBus.Stan.Config
+﻿namespace PostTechnology.CrossCutting.Config
 {
     public class NatsConnectionSettings
     {
