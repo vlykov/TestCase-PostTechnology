@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "PostTechnology.EventSubscriber": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "PostTechnology.EventPublisher": {
+      "commandName": "Project"
+    }
+  }
+}
